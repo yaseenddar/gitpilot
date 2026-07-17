@@ -50,7 +50,7 @@ class GitService:
         status_lines = self._run_git(["status", "--porcelain=v1"])
         if not status_lines:
             return staged, unstaged, untracked
-
+        print(f"###########: Status Lines: \n{status_lines}")
         for line in status_lines.split("\n"):
             if not line:
                 continue
@@ -76,7 +76,7 @@ class GitService:
                 status_map = {"M": "modified", "D": "deleted"}
                 diff = self._run_git(["diff", "--", file_path])
                 unstaged.append(FileChange(path=file_path, status=status_map.get(xy[1], "modified"), diff=diff))
-
+        print
         return staged, unstaged, untracked
 
     def get_snapshot(self) -> RepositorySnapshot:
@@ -107,7 +107,7 @@ class GitService:
 
 if __name__ == "__main__":
     # Point this to a local test git repository 
-    git_service = GitService(repo_path="F:\langGraph") 
+    git_service = GitService(repo_path=".") 
     
     snapshot = git_service.get_snapshot() 
     

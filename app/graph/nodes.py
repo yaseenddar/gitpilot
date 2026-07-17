@@ -67,17 +67,28 @@ def plan_node(state: GitAgentState) -> dict:
         if f.diff:
             relevant_lines = [line for line in f.diff.split("\n") if line.startswith("+") or line.startswith("-")]
             diff_lines.append(f"File: {f.path}\nChanges:\n" + "\n".join(relevant_lines[:50]))
-
+    # ─── ADD THIS: Extract full code from brand new untracked files ───
+    for f in snapshot.untracked_files:
+        file_path = Path(f.path)
+        if file_path.exists():
+            try:
+                # Read content from the newly added file
+                file_content = file_path.read_text(encoding="utf-8")
+                # Format it like an added diff block so the prompt remains uniform
+                added_lines = [f"+ {line}" for line in file_content.split("\n")]
+                diff_lines.append(f"File: {f.path} (NEW FILE)\nChanges:\n" + "\n".join(added_lines[:100]))
+            except Exception as e:
+                print(f"⚠️ Could not read untracked file context {f.path}: {e}")
+    # ─────────────────────────────────────────────────────────────────
     changed_lines_diff = "\n\n".join(diff_lines) if diff_lines else "No line-level changes detected."
     project_readme = get_project_readme()
-    # print(f"############# Lines changed \n {changed_lines_diff}")
+    print(f"############# Lines changed \n {changed_lines_diff}")
     prompt_template = get_planner_prompt()
     llm_planner = get_llm_planner()
     # print(f" ####### Summary project \n {project_readme}")
     # print(f" ####### whole prompt \n {changed_lines_diff}")
 
     chain = prompt_template | llm_planner
-    print(f"&&&&&&&&&&&&&&& Changed LInes \n{changed_lines_diff}")
     plan = chain.invoke({
         "project_readme": project_readme,
         "changed_lines_diff": changed_lines_diff
