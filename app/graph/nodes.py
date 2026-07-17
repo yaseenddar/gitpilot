@@ -8,6 +8,7 @@ from pathlib import Path
 from rich import print
 import json
 import os
+import re
 def get_project_readme() -> str:
     readme_path = Path(__file__).resolve().parent.parent / "context" / "CONTEXT.md"
     if readme_path.exists():
@@ -87,31 +88,69 @@ def plan_node(state: GitAgentState) -> dict:
     if plan.parameters:
         print(f"   👉 Parameters: {json.dumps(plan.parameters)}")
     
-    # save the context readme if summary of the prevoius files is updated
-    if plan.summary_modified:
-        content = "Hello, world!\nThis is some text."
-        readme_path = Path(__file__).resolve().parent.parent / "context" / "CONTEXT.md"
-        with open(readme_path, "w", encoding="utf-8") as file:
-            file.write(plan.summary)
-            print(f"############ CONTEXT.md updated")
     return {"plan": plan}
+
+def update_readme_summary(new_summary: str):
+    """
+    Slices the new summary cleanly into README.md under an 'Active Feature Map' 
+    header instead of wiping the entire document.
+    """
+    readme_path =Path(__file__).resolve().parent.parent / "context" / "CONTEXT.md"
+    header_marker = "## Active Feature Map"
+    
+    if not readme_path.exists():
+        # Fallback if README doesn't exist
+        readme_path.write_text(f"# GitPilot Workspace\n\n{header_marker}\n{new_summary}\n", encoding="utf-8")
+        return
+
+    content = readme_path.read_text(encoding="utf-8")
+    
+    # Format the incoming summary neatly
+    formatted_section = f"{header_marker}\n{new_summary}\n"
+
+    if header_marker in content:
+        # Regex to replace everything from '## Active Feature Map' down to the next major header (##) or end of file
+        pattern = re.compile(rf"{header_marker}.*?(?=\n## |$)", re.DOTALL)
+        updated_content = pattern.sub(formatted_section.strip(), content)
+    else:
+        # If the header doesn't exist, append it cleanly to the end of the file
+        updated_content = content.rstrip() + f"\n\n{formatted_section}"
+
+    readme_path.write_text(updated_content, encoding="utf-8")
+
+
 def execute_node(state: GitAgentState) -> dict:
     print("🚀 [Node: Execute] Performing planned operations...")
     plan = state["plan"]
+    snapshot = state["snapshot"]
     service = GitService(state["repository_path"])
     
     if not plan or plan.action == "none":
         return {"execution_result": {"status": "skipped", "message": "No action required"}}
         
+    # ─── 1. POLICY ENFORCEMENT ───
+    is_allowed, violations = PolicyService.evaluate(plan, snapshot)
+    if not is_allowed:
+        print("⚠️ [Policy Block] The action plan failed security/policy verification:")
+        for violation in violations:
+            print(f"   ❌ {violation}")
+        return {"execution_result": {"status": "blocked", "error": "Policy violation", "violations": violations}}
+
+    # ─── 2. SUMMARY UPDATE ENFORCEMENT ───
+    if plan.summary_modified and plan.summary:
+        print("📝 [Node: Execute] Splicing new architecture update into CONTEXT.md...")
+        update_readme_summary(plan.summary)
+
+    # ─── 3. COMMIT EXECUTION ───
     if plan.action == "commit":
-        # The LLM generates the conventional commit message dynamically based on your changes!
-        msg = plan.parameters.get("commit_message", "feat: automated repository snapshot update")
+        msg = plan.parameters.get("commit_message", "chore: auto sync workspace state")
         print(f"   Staging files and executing live commit: '{msg}'")
         service.stage_all()
         service.create_commit(msg)
         return {"execution_result": {"status": "success", "action": "commit"}}
         
     return {"execution_result": {"status": "failed", "error": "Unknown action"}}
+
 
 def verify_node(state: GitAgentState) -> dict:
     print("✅ [Node: Verify] Checking post-execution repository stability...")

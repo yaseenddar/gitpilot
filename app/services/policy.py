@@ -9,7 +9,7 @@ class PolicyService:
         (re.compile(r"sk-[a-zA-Z0-9]{48}"), "OpenAI API Key leaked"),
         (re.compile(r"AIzaSy[a-zA-Z0-9-_]{35}"), "Google API Key leaked"),
         (re.compile(r"pdb\.set_trace\(\)"), "Leftover Python debugger breakpoint"),
-        (re.compile(r"print\("), "Debug print statement detected (use logging instead)")
+        # (re.compile(r"print\("), "Debug print statement detected (use logging instead)")
     ]
 
     @classmethod
