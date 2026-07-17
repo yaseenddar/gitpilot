@@ -81,12 +81,19 @@ def plan_node(state: GitAgentState) -> dict:
         "project_readme": project_readme,
         "changed_lines_diff": changed_lines_diff
     })
-    print(f"############: \n{plan}")
+    print(f"############: \n{plan}\n")
     print(f"   👉 LLM Decision: {plan.action.upper()}")
     print(f"   👉 Reason: {plan.reason}")
     if plan.parameters:
         print(f"   👉 Parameters: {json.dumps(plan.parameters)}")
-        
+    
+    # save the context readme if summary of the prevoius files is updated
+    if plan.summary_modified:
+        content = "Hello, world!\nThis is some text."
+        readme_path = Path(__file__).resolve().parent.parent / "context" / "CONTEXT.md"
+        with open(readme_path, "w", encoding="utf-8") as file:
+            file.write(plan.summary)
+            print(f"############ CONTEXT.md updated")
     return {"plan": plan}
 def execute_node(state: GitAgentState) -> dict:
     print("🚀 [Node: Execute] Performing planned operations...")

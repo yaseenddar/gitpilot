@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # Force the root directory into sys.path so 'app' packages resolve flawlessly
-ROOT_DIR = "F:\langGraph"
+ROOT_DIR = "."
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 

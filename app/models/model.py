@@ -19,3 +19,5 @@ class ActionPlan(BaseModel):
     reason: str = Field(..., description="Justification for why this action is necessary or why no action is taken.")
     confidence: float = Field(..., description="Value between 0.0 and 1.0 indicating decision confidence.")
     parameters: dict = Field(default_factory=dict, description="Arguments for tools, e.g., {'commit_message': '...'} or {'branch_name': '...'}")
+    summary: str = Field(description="if need return make the updated summary for the changes to to for next context and return summary modified true")
+    summary_modified:bool = Field(description="return true for summary modifed")
