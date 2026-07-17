@@ -181,7 +181,7 @@ def verify_node(state: GitAgentState) -> dict:
 # app/graph/nodes.py (Update execute_node)
 
 def execute_node(state: GitAgentState) -> dict:
-    print("🚀 [Node: Execute] Performing planned operations...")
+    print(f"🚀 [Node: Execute] Performing planned operations...{state}")
     plan = state["plan"]
     snapshot = state["snapshot"]
     service = GitService(state["repository_path"])
