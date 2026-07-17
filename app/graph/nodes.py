@@ -103,32 +103,20 @@ def plan_node(state: GitAgentState) -> dict:
 
 def update_readme_summary(new_summary: str):
     """
-    Slices the new summary cleanly into README.md under an 'Active Feature Map' 
-    header instead of wiping the entire document.
+    Completely overwrites CONTEXT.md with the full new structural 
+    summary provided by the LLM.
     """
-    readme_path =Path(__file__).resolve().parent.parent / "context" / "CONTEXT.md"
-    header_marker = "## Active Feature Map"
+    # Adjust path if your structure uses 'context/CONTEXT.md' or root 'README.md'
+    readme_path = Path(__file__).resolve().parent.parent / "context" / "CONTEXT.md"
     
-    if not readme_path.exists():
-        # Fallback if README doesn't exist
-        readme_path.write_text(f"# GitPilot Workspace\n\n{header_marker}\n{new_summary}\n", encoding="utf-8")
-        return
-
-    content = readme_path.read_text(encoding="utf-8")
+    # Ensure the parent directory exists if it's a new setup
+    readme_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Format the incoming summary neatly
-    formatted_section = f"{header_marker}\n{new_summary}\n"
-
-    if header_marker in content:
-        # Regex to replace everything from '## Active Feature Map' down to the next major header (##) or end of file
-        pattern = re.compile(rf"{header_marker}.*?(?=\n## |$)", re.DOTALL)
-        updated_content = pattern.sub(formatted_section.strip(), content)
-    else:
-        # If the header doesn't exist, append it cleanly to the end of the file
-        updated_content = content.rstrip() + f"\n\n{formatted_section}"
-
-    readme_path.write_text(updated_content, encoding="utf-8")
-
+    # Format the file with a clean uniform header and dump the complete raw markdown string
+    full_content = f"# GitPilot Workspace Architecture Map\n\n## Active Feature Map\n{new_summary}\n"
+    
+    print(f"📝 Overwriting context file at: {readme_path.name}")
+    readme_path.write_text(full_content, encoding="utf-8")
 
 # def execute_node(state: GitAgentState) -> dict:
 #     print(f"🚀 [Node: Execute] Performing planned operations...\n{state}")
