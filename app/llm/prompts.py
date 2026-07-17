@@ -17,16 +17,16 @@ def get_planner_prompt() -> ChatPromptTemplate:
     return ChatPromptTemplate.from_messages([
         ("system", PLANNER_SYSTEM_PROMPT),
         ("human", """
-Here is the high-level overview of the project we are building:
-=========================================
-{project_readme}
-=========================================
+        Here is the high-level overview of the project we are building:
+        =========================================
+        {project_readme}
+        =========================================
 
-And here are the EXACT lines of code that were changed in this workspace event:
-=========================================
-{changed_lines_diff}
-=========================================
+        And here are the EXACT lines of code that were changed in this workspace event:
+        =========================================
+        {changed_lines_diff}
+        =========================================
 
-Formulate your action plan now.
-""")
-    ])
+        Formulate your action plan now.
+        """)
+            ])

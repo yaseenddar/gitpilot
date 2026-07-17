@@ -70,19 +70,19 @@ def plan_node(state: GitAgentState) -> dict:
 
     changed_lines_diff = "\n\n".join(diff_lines) if diff_lines else "No line-level changes detected."
     project_readme = get_project_readme()
-
+    # print(f"############# Lines changed \n {changed_lines_diff}")
     prompt_template = get_planner_prompt()
     llm_planner = get_llm_planner()
-    print(f" ####### Summary project \n {project_readme}")
-    print(f" ####### whole prompt \n {changed_lines_diff}")
+    # print(f" ####### Summary project \n {project_readme}")
+    # print(f" ####### whole prompt \n {changed_lines_diff}")
 
     chain = prompt_template | llm_planner
-    
+    print(f"&&&&&&&&&&&&&&& Changed LInes \n{changed_lines_diff}")
     plan = chain.invoke({
         "project_readme": project_readme,
         "changed_lines_diff": changed_lines_diff
     })
-    print(f"############: \n{plan}\n")
+    print(f"############: LLm Response \n{plan}\n\n")
     print(f"   👉 LLM Decision: {plan.action.upper()}")
     print(f"   👉 Reason: {plan.reason}")
     if plan.parameters:
