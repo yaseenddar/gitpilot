@@ -131,35 +131,35 @@ def update_readme_summary(new_summary: str):
 
 
 def execute_node(state: GitAgentState) -> dict:
-    print("🚀 [Node: Execute] Performing planned operations...")
-    plan = state["plan"]
-    print(f"######## Plan: \n{plan}")
-    snapshot = state["snapshot"]
-    service = GitService(state["repository_path"])
+    print(f"🚀 [Node: Execute] Performing planned operations...\n{state}")
+    # plan = state["plan"]
+    # print(f"######## Plan: \n{plan}")
+    # snapshot = state["snapshot"]
+    # service = GitService(state["repository_path"])
     
-    if not plan or plan.action == "none":
-        return {"execution_result": {"status": "skipped", "message": "No action required"}}
+    # if not plan or plan.action == "none":
+    #     return {"execution_result": {"status": "skipped", "message": "No action required"}}
         
-    # ─── 1. POLICY ENFORCEMENT ───
-    is_allowed, violations = PolicyService.evaluate(plan, snapshot)
-    if not is_allowed:
-        print("⚠️ [Policy Block] The action plan failed security/policy verification:")
-        for violation in violations:
-            print(f"   ❌ {violation}")
-        return {"execution_result": {"status": "blocked", "error": "Policy violation", "violations": violations}}
+    # # ─── 1. POLICY ENFORCEMENT ───
+    # is_allowed, violations = PolicyService.evaluate(plan, snapshot)
+    # if not is_allowed:
+    #     print("⚠️ [Policy Block] The action plan failed security/policy verification:")
+    #     for violation in violations:
+    #         print(f"   ❌ {violation}")
+    #     return {"execution_result": {"status": "blocked", "error": "Policy violation", "violations": violations}}
 
-    # ─── 2. SUMMARY UPDATE ENFORCEMENT ───
-    if plan.summary_modified and plan.summary:
-        print("📝 [Node: Execute] Splicing new architecture update into CONTEXT.md...")
-        update_readme_summary(plan.summary)
+    # # ─── 2. SUMMARY UPDATE ENFORCEMENT ───
+    # if plan.summary_modified and plan.summary:
+    #     print("📝 [Node: Execute] Splicing new architecture update into CONTEXT.md...")
+    #     update_readme_summary(plan.summary)
 
-    # ─── 3. COMMIT EXECUTION ───
-    if plan.action == "commit":
-        msg = plan.parameters.get("commit_message", "chore: auto sync workspace state")
-        print(f"   Staging files and executing live commit: '{msg}'")
-        service.stage_all()
-        service.create_commit(msg)
-        return {"execution_result": {"status": "success", "action": "commit"}}
+    # # ─── 3. COMMIT EXECUTION ───
+    # if plan.action == "commit":
+    #     msg = plan.parameters.get("commit_message", "chore: auto sync workspace state")
+    #     print(f"   Staging files and executing live commit: '{msg}'")
+    #     service.stage_all()
+    #     service.create_commit(msg)
+    #     return {"execution_result": {"status": "success", "action": "commit"}}
         
     return {"execution_result": {"status": "failed", "error": "Unknown action"}}
 
