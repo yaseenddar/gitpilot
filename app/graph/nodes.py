@@ -93,7 +93,7 @@ def plan_node(state: GitAgentState) -> dict:
         "project_readme": project_readme,
         "changed_lines_diff": changed_lines_diff
     })
-    print(f"############: LLm Response \n{plan}\n\n")
+    # print(f"############: LLm Response \n{plan}\n\n")
     print(f"   👉 LLM Decision: {plan.action.upper()}")
     print(f"   👉 Reason: {plan.reason}")
     if plan.parameters:
@@ -133,6 +133,7 @@ def update_readme_summary(new_summary: str):
 def execute_node(state: GitAgentState) -> dict:
     print("🚀 [Node: Execute] Performing planned operations...")
     plan = state["plan"]
+    print(f"######## Plan: \n{plan}")
     snapshot = state["snapshot"]
     service = GitService(state["repository_path"])
     
