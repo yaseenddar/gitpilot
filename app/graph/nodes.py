@@ -118,40 +118,6 @@ def update_readme_summary(new_summary: str):
     print(f"📝 Overwriting context file at: {readme_path.name}")
     readme_path.write_text(full_content, encoding="utf-8")
 
-# def execute_node(state: GitAgentState) -> dict:
-#     print(f"🚀 [Node: Execute] Performing planned operations...\n{state}")
-#     # plan = state["plan"]
-#     # print(f"######## Plan: \n{plan}")
-#     # snapshot = state["snapshot"]
-#     # service = GitService(state["repository_path"])
-    
-#     # if not plan or plan.action == "none":
-#     #     return {"execution_result": {"status": "skipped", "message": "No action required"}}
-        
-#     # # ─── 1. POLICY ENFORCEMENT ───
-#     # is_allowed, violations = PolicyService.evaluate(plan, snapshot)
-#     # if not is_allowed:
-#     #     print("⚠️ [Policy Block] The action plan failed security/policy verification:")
-#     #     for violation in violations:
-#     #         print(f"   ❌ {violation}")
-#     #     return {"execution_result": {"status": "blocked", "error": "Policy violation", "violations": violations}}
-
-#     # # ─── 2. SUMMARY UPDATE ENFORCEMENT ───
-#     # if plan.summary_modified and plan.summary:
-#     #     print("📝 [Node: Execute] Splicing new architecture update into CONTEXT.md...")
-#     #     update_readme_summary(plan.summary)
-
-#     # # ─── 3. COMMIT EXECUTION ───
-#     # if plan.action == "commit":
-#     #     msg = plan.parameters.get("commit_message", "chore: auto sync workspace state")
-#     #     print(f"   Staging files and executing live commit: '{msg}'")
-#     #     service.stage_all()
-#     #     service.create_commit(msg)
-#     #     return {"execution_result": {"status": "success", "action": "commit"}}
-        
-#     return {"execution_result": {"status": "failed", "error": "Unknown action"}}
-
-
 def verify_node(state: GitAgentState) -> dict:
     print("✅ [Node: Verify] Checking post-execution repository stability...")
     service = GitService(state["repository_path"])
@@ -169,41 +135,64 @@ def verify_node(state: GitAgentState) -> dict:
 # app/graph/nodes.py (Update execute_node)
 
 def execute_node(state: GitAgentState) -> dict:
-    print(f"🚀 [Node: Execute] Performing planned operations...{state}")
+    print("\n🚀 [Node: Execute] Evaluating planned operations...")
     plan = state["plan"]
     snapshot = state["snapshot"]
     service = GitService(state["repository_path"])
     
     if not plan or plan.action == "none":
+        print("ℹ️ No actions planned by the agent. Exiting loop.")
         return {"execution_result": {"status": "skipped", "message": "No action required"}}
         
-    # ─── POLICY ENFORCEMENT ───
+    # 1. POLICY ENFORCEMENT
     is_allowed, violations = PolicyService.evaluate(plan, snapshot)
     if not is_allowed:
         print("⚠️ [Policy Block] The action plan failed security/policy verification:")
         for violation in violations:
             print(f"   ❌ {violation}")
-        return {
-            "execution_result": {
-                "status": "blocked", 
-                "error": "Policy violation", 
-                "violations": violations
-            }
-        }
-    # ──────────────────────────
-    # ─── 2. SUMMARY UPDATE ENFORCEMENT ───
-    if plan.summary_modified and plan.summary:
-        print("📝 [Node: Execute] Splicing new architecture update into CONTEXT.md...")
-        update_readme_summary(plan.summary)
-        
+        return {"execution_result": {"status": "blocked", "error": "Policy violation"}}
+
+    # ─── 2. HUMAN IN THE LOOP (HITL) INTERACTIVE INTERCEPT ───
+    print("\n✋ [HUMAN IN THE LOOP APPROVAL REQUIRED]")
+    print("=" * 60)
+    print(f"🤖 Proposed Action : {plan.action.upper()}")
+    print(f"💡 Reason          : {plan.reason}")
+    
     if plan.action == "commit":
-        msg = plan.parameters.get("commit_message")
-        print(f"   Staging files and executing live commit: '{msg}'")
+        print(f"💬 Commit Message  : '{plan.parameters.get('commit_message')}'")
+        
+    if plan.summary_modified and plan.summary:
+        print("\n📝 Proposed Context Map Update:")
+        print("-" * 40)
+        print(plan.summary.strip())
+        print("-" * 40)
+    print("=" * 60)
+
+    # Prompt the developer in the running terminal thread
+    try:
+        user_choice = input("👉 Apply these updates? (y/n or edit message): ").strip().lower()
+    except Exception:
+        # Fallback if standard input stream is unavailable
+        print("❌ Cannot capture terminal input. Aborting execution safely.")
+        return {"execution_result": {"status": "aborted", "reason": "No user input stream available"}}
+
+    if user_choice not in ["y", "yes"]:
+        print("🛑 Operation denied by human operator. Aborting workflow.")
+        return {"execution_result": {"status": "denied", "reason": "User rejected changes"}}
+    # ───────────────────────────────────────────────────────────
+
+    # 3. SUMMARY UPDATE ENFORCEMENT
+    if plan.summary_modified and plan.summary:
+        update_readme_summary(plan.summary)
+
+    # 4. COMMIT EXECUTION
+    if plan.action == "commit":
+        msg = plan.parameters.get("commit_message", "chore: auto sync workspace state")
+        print(f"   Staging files and executing live commit...")
         service.stage_all()
         service.create_commit(msg)
         return {"execution_result": {"status": "success", "action": "commit"}}
         
     return {"execution_result": {"status": "failed", "error": "Unknown action"}}
-
 if __name__ == "__main__":
     print(get_project_readme())

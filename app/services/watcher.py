@@ -13,7 +13,7 @@ if str(ROOT_DIR) not in sys.path:
 from app.graph.builder import create_git_graph
 
 # Configuration variables
-INACTIVITY_TIMEOUT_SECONDS = 3600  # 1 Hour
+INACTIVITY_TIMEOUT_SECONDS = 2  # 1 Hour
 TIMESTAMP_FILE = ROOT_DIR / "app" / "state" / ".last_activity"
 
 class InactivityHandler(FileSystemEventHandler):
